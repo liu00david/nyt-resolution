@@ -1,0 +1,265 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* New York-esque palette: muted grays, warm off-whites, subtle warmth */
+    --bg-color: #f5f4f0;
+    --marble-bg: #ffffff;
+    --marble-border: #d4d0c8;
+    --text-primary: #2b2b2b;
+    --text-secondary: #6b6b6b;
+    --overlay-blur: rgba(245, 244, 240, 0.85);
+    --jar-border: #8b8680;
+    --jar-bottom: #6b6660;
+
+    /* Sizes */
+    --marble-size-desktop: 100px;
+    --marble-size-mobile: 70px;
+    --jar-width-desktop: 600px;
+    --jar-width-mobile: 340px;
+    --marbles-per-row-desktop: 5;
+    --marbles-per-row-mobile: 4;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    overflow-y: scroll;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#container {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 60px 20px 100px;
+}
+
+#physics-canvas {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+#marbles-layer {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+.jar {
+    position: relative;
+    width: var(--jar-width-mobile);
+    min-height: 400px;
+    border-left: 3px solid var(--jar-border);
+    border-right: 3px solid var(--jar-border);
+    border-bottom: 8px solid var(--jar-bottom);
+    border-radius: 0 0 12px 12px;
+    background: linear-gradient(to bottom, transparent 0%, rgba(139, 134, 128, 0.03) 100%);
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    #container {
+        padding: 80px 40px 120px;
+    }
+
+    .jar {
+        width: var(--jar-width-desktop);
+        min-height: 600px;
+    }
+}
+
+.marble {
+    position: absolute;
+    width: var(--marble-size-mobile);
+    height: var(--marble-size-mobile);
+    border-radius: 50%;
+    background-color: var(--marble-bg);
+    border: 1px solid var(--marble-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 768px) {
+    .marble {
+        width: var(--marble-size-desktop);
+        height: var(--marble-size-desktop);
+        padding: 16px;
+    }
+}
+
+.marble:hover:not(.expanded) {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.marble-text {
+    font-size: 9px;
+    line-height: 1.3;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .marble-text {
+        font-size: 11px;
+        line-height: 1.35;
+    }
+}
+
+.marble-metadata {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Expanded state */
+.marble.expanded {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(2.2);
+    z-index: 1001;
+    width: var(--marble-size-mobile);
+    height: var(--marble-size-mobile);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+@media (min-width: 768px) {
+    .marble.expanded {
+        width: var(--marble-size-desktop);
+        height: var(--marble-size-desktop);
+        transform: translate(-50%, -50%) scale(2.5);
+    }
+}
+
+.marble.expanded .marble-metadata {
+    display: block;
+}
+
+.marble.expanded .marble-text {
+    font-size: 13px;
+    margin-bottom: 30px;
+}
+
+@media (min-width: 768px) {
+    .marble.expanded .marble-text {
+        font-size: 14px;
+    }
+}
+
+/* Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--overlay-blur);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* New marble indicator */
+.new-indicator {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--marble-bg);
+    border: 1px solid var(--marble-border);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.new-indicator.visible {
+    opacity: 1;
+}
+
+.new-indicator.hidden {
+    display: none;
+}
+
+/* Arrival animation for new marbles */
+@keyframes fadeInSettle {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.marble.arriving {
+    animation: fadeInSettle 0.4s ease-out;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .marble,
+    .overlay,
+    .new-indicator {
+        transition: none;
+    }
+
+    .marble.arriving {
+        animation: none;
+    }
+
+    .marble.expanded {
+        transform: translate(-50%, -50%) scale(2.2);
+    }
+
+    @media (min-width: 768px) {
+        .marble.expanded {
+            transform: translate(-50%, -50%) scale(2.5);
+        }
+    }
+}

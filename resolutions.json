@@ -1,0 +1,142 @@
+[
+  {
+    "id": "1",
+    "resolution": "Be more present with my family",
+    "initials": "M.R.",
+    "age": 34,
+    "location": "Brooklyn, NY"
+  },
+  {
+    "id": "2",
+    "resolution": "Read one book every month",
+    "initials": "J.K.",
+    "age": 28,
+    "location": "Manhattan, NY"
+  },
+  {
+    "id": "3",
+    "resolution": "Learn to cook without recipes",
+    "initials": "A.S.",
+    "age": 42,
+    "location": "Queens, NY"
+  },
+  {
+    "id": "4",
+    "resolution": "Call my parents every week",
+    "initials": "T.H.",
+    "age": 31,
+    "location": "Bronx, NY"
+  },
+  {
+    "id": "5",
+    "resolution": "Stop checking my phone first thing in the morning",
+    "initials": "L.W.",
+    "age": 26,
+    "location": "Williamsburg, NY"
+  },
+  {
+    "id": "6",
+    "resolution": "Write in my journal daily",
+    "initials": "K.P.",
+    "age": 39,
+    "location": "Park Slope, NY"
+  },
+  {
+    "id": "7",
+    "resolution": "Take the stairs instead of the elevator",
+    "initials": "R.M.",
+    "age": 45,
+    "location": "Upper West Side, NY"
+  },
+  {
+    "id": "8",
+    "resolution": "Listen more, talk less",
+    "initials": "D.C.",
+    "age": 52,
+    "location": "Harlem, NY"
+  },
+  {
+    "id": "9",
+    "resolution": "Practice gratitude every evening",
+    "initials": "N.B.",
+    "age": 29,
+    "location": "Astoria, NY"
+  },
+  {
+    "id": "10",
+    "resolution": "Spend less time on social media",
+    "initials": "E.L.",
+    "age": 24,
+    "location": "East Village, NY"
+  },
+  {
+    "id": "11",
+    "resolution": "Take my dog on longer walks",
+    "initials": "F.G.",
+    "age": 37,
+    "location": "Chelsea, NY"
+  },
+  {
+    "id": "12",
+    "resolution": "Learn to play the guitar",
+    "initials": "B.T.",
+    "age": 33,
+    "location": "Bushwick, NY"
+  },
+  {
+    "id": "13",
+    "resolution": "Say yes to more adventures",
+    "initials": "C.R.",
+    "age": 27,
+    "location": "Greenwich Village, NY"
+  },
+  {
+    "id": "14",
+    "resolution": "Drink more water throughout the day",
+    "initials": "H.J.",
+    "age": 41,
+    "location": "Upper East Side, NY"
+  },
+  {
+    "id": "15",
+    "resolution": "Be kinder to myself",
+    "initials": "V.S.",
+    "age": 35,
+    "location": "SoHo, NY"
+  },
+  {
+    "id": "16",
+    "resolution": "Wake up earlier to watch the sunrise",
+    "initials": "P.N.",
+    "age": 30,
+    "location": "Red Hook, NY"
+  },
+  {
+    "id": "17",
+    "resolution": "Volunteer at the local shelter",
+    "initials": "G.D.",
+    "age": 48,
+    "location": "Fort Greene, NY"
+  },
+  {
+    "id": "18",
+    "resolution": "Finish what I start",
+    "initials": "I.M.",
+    "age": 38,
+    "location": "Long Island City, NY"
+  },
+  {
+    "id": "19",
+    "resolution": "Take a proper lunch break",
+    "initials": "O.K.",
+    "age": 32,
+    "location": "Midtown, NY"
+  },
+  {
+    "id": "20",
+    "resolution": "Reconnect with old friends",
+    "initials": "S.F.",
+    "age": 44,
+    "location": "Battery Park, NY"
+  }
+]
