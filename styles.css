@@ -8,7 +8,7 @@ body {
     width: 100vw;
     overflow-x: hidden;
     overflow-y: auto;
-    background: #e8f4f8;
+    background: #ffffff;
     background-attachment: fixed;
     margin: 0;
     padding: 0;
@@ -72,7 +72,7 @@ canvas {
     z-index: 100;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    border-bottom: 2px solid #2a2a2a;
+    border: 2px solid #2a2a2a;
     padding: 15px 20px;
     display: flex;
     flex-direction: column;
@@ -95,15 +95,15 @@ canvas {
     display: flex;
     gap: 8px;
     width: 100%;
-    max-width: 100%;
+    max-width: 400px;
     flex-wrap: nowrap;
 }
 
 #search-container input {
-    padding: 6px 8px;
+    padding: 8px 10px;
     border: none;
-    border-bottom: 2px solid #2a2a2a;
-    background: transparent;
+    border-radius: 6px;
+    background: rgba(220, 220, 220, 0.3);
     font-family: 'Kalam', 'Patrick Hand', cursive;
     font-size: 12px;
     font-weight: 400;
@@ -120,7 +120,7 @@ canvas {
 }
 
 #search-container input:focus {
-    border-bottom-color: #0066cc;
+    background: rgba(200, 200, 200, 0.4);
 }
 
 /* Modal styles */
@@ -205,4 +205,17 @@ canvas {
     font-size: 18px;
     opacity: 0.9;
     margin: 0;
+}
+
+/* Watermark */
+#watermark {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 50;
+    font-family: 'Kalam', 'Patrick Hand', cursive;
+    font-size: 12px;
+    color: rgba(42, 42, 42, 0.4);
+    text-align: right;
+    line-height: 1.4;
 }

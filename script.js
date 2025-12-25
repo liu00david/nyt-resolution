@@ -46,7 +46,7 @@ function drawGlassJar(context, centerX, centerY, width, height, thickness) {
     context.shadowOffsetX = 0;
     context.shadowOffsetY = 8;
 
-    // Draw opaque interior background with gradient and rounded corners
+    // Draw opaque interior background with gradient and rounded bottom corners
     const interiorGradient = context.createLinearGradient(leftX, topY, leftX, bottomY);
     interiorGradient.addColorStop(0, 'rgba(220, 230, 240, 0.4)');
     interiorGradient.addColorStop(0.5, 'rgba(200, 215, 230, 0.5)');
@@ -58,18 +58,15 @@ function drawGlassJar(context, centerX, centerY, width, height, thickness) {
     context.moveTo(leftX + cornerRadius, bottomY);
     // Bottom edge to bottom right corner
     context.lineTo(rightX - cornerRadius, bottomY);
-    // Bottom right corner
+    // Bottom right corner - rounded
     context.arcTo(rightX, bottomY, rightX, bottomY - cornerRadius, cornerRadius);
-    // Right wall up, with rounded top corners
-    context.lineTo(rightX, topY + cornerRadius);
-    context.arcTo(rightX, topY, rightX - cornerRadius, topY, cornerRadius);
-    // Top edge
-    context.lineTo(leftX + cornerRadius, topY);
-    // Top left corner
-    context.arcTo(leftX, topY, leftX, topY + cornerRadius, cornerRadius);
-    // Left wall down to bottom left corner
+    // Right wall - straight to top (jar is open)
+    context.lineTo(rightX, topY);
+    // Top edge - straight across
+    context.lineTo(leftX, topY);
+    // Left wall - straight down to bottom corner
     context.lineTo(leftX, bottomY - cornerRadius);
-    // Bottom left corner
+    // Bottom left corner - rounded
     context.arcTo(leftX, bottomY, leftX + cornerRadius, bottomY, cornerRadius);
     context.closePath();
     context.fill();
@@ -237,14 +234,17 @@ function setupPhysics() {
     // Base jar height calculation
     // Adjust the multiplier here to change jar height (currently 0.014)
     const heightMultiplier = 0.014;
-    const jarHeight = screenHeight * totalSizeMultiplier * heightMultiplier;
+    const calculatedHeight = screenHeight * totalSizeMultiplier * heightMultiplier;
+    const minHeight = screenHeight * 0.5; // Minimum jar height is half page height
+    const jarHeight = Math.max(calculatedHeight, minHeight);
 
     console.log(`Total size multiplier sum: ${totalSizeMultiplier.toFixed(2)}`);
     console.log(`Calculated jar height: ${jarHeight.toFixed(2)}px (${(jarHeight / screenHeight).toFixed(2)}x screen height)`)
+    console.log(`Min height enforced: ${jarHeight === minHeight}`)
 
     // Set canvas height to fit jar exactly
-    const topMargin = 150;
-    const bottomMargin = 50;
+    const topMargin = 200;
+    const bottomMargin = 80;
     const canvasHeight = topMargin + jarHeight + bottomMargin;
 
     // Create renderer with high DPI support
