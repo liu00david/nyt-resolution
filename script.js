@@ -12,7 +12,7 @@ let searchFilters = {
     city: ''
 };
 let startTime = Date.now();
-let settledMarbles = 0;
+let spawnedMarbles = 0; // Count marbles as they spawn into view
 let jarTopY = 0;
 
 // Helper functions for color manipulation
@@ -257,9 +257,9 @@ function setupPhysics() {
     const jarY = topMargin + jarHeight / 2;
     jarTopY = jarY - jarHeight / 2; // Store jar top position globally
 
-    // Position counter above jar
+    // Position counter above jar - properly centered
     const counterElement = document.getElementById('counter');
-    counterElement.style.left = `${jarX}px`;
+    counterElement.style.left = '50%';
     counterElement.style.top = `${jarTopY - 60}px`;
     counterElement.style.transform = 'translateX(-50%)';
 
@@ -360,24 +360,17 @@ function setupPhysics() {
         // Draw realistic 3D glass jar
         drawGlassJar(context, jarX, jarY, jarWidth, jarHeight, wallThickness);
 
-        // Track settled marbles
-        const elapsedTime = (Date.now() - startTime) / 1000;
-
-        // Count settled marbles (low velocity or sleeping)
-        let settled = 0;
+        // Track spawned marbles (count as they enter the visible area)
+        let spawned = 0;
         marbles.forEach(marble => {
-            const velocity = Math.sqrt(
-                marble.velocity.x * marble.velocity.x +
-                marble.velocity.y * marble.velocity.y
-            );
-            // Count as settled if velocity is low or if marble is sleeping
-            if ((velocity < 0.5 && marble.position.y > jarTopY) || marble.isSleeping) {
-                settled++;
+            // Count marble as spawned if it has entered the visible canvas area (y > 0)
+            if (marble.position.y > 0) {
+                spawned++;
             }
         });
 
-        if (settled > settledMarbles) {
-            settledMarbles = settled;
+        if (spawned > spawnedMarbles) {
+            spawnedMarbles = spawned;
             updateCounter();
         }
 
@@ -627,18 +620,29 @@ function setupTiltControls() {
     requestPermission();
 }
 
-// Handle window resize
+// Handle window resize - disabled to prevent mobile browser address bar issues
+// On mobile, when scrolling, the address bar shows/hides causing window.innerHeight
+// to change, which would mess up the physics simulation and layout
+// Instead, we keep the initial canvas size fixed
+// If true responsive behavior is needed, uncomment and implement full recalculation
+/*
 window.addEventListener('resize', () => {
     if (render) {
+        // Would need to recalculate:
+        // - jar position and dimensions
+        // - physics world walls
+        // - counter position
+        // - all marble positions
         render.canvas.width = window.innerWidth;
         render.canvas.height = window.innerHeight;
     }
 });
+*/
 
-// Update counter based on settled marbles
+// Update counter based on spawned marbles
 function updateCounter() {
     const counterElement = document.getElementById('counter');
-    counterElement.textContent = settledMarbles;
+    counterElement.textContent = spawnedMarbles;
 }
 
 // Start the app

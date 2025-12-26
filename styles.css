@@ -15,6 +15,9 @@ body {
     font-family: 'Kalam', 'Patrick Hand', 'Caveat', cursive;
     font-weight: 300;
     position: relative;
+    /* Prevent layout shifts from mobile address bar */
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height - more stable on mobile */
 }
 
 body::before {
@@ -55,12 +58,17 @@ body::after {
     display: block;
     position: relative;
     z-index: 2;
+    /* Prevent canvas from shifting during scroll */
+    touch-action: pan-y; /* Allow vertical scrolling but prevent other gestures */
 }
 
 canvas {
     display: block;
     margin: 0 auto;
     border-radius: 8px;
+    /* Prevent canvas size changes from affecting layout */
+    max-width: 100%;
+    height: auto;
 }
 
 /* Header Banner */
