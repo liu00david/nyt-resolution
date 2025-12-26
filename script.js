@@ -555,7 +555,7 @@ function setupInteractions() {
 
         modalMarble.style.backgroundColor = color;
         modalMarble.textContent = data.resolution.toLowerCase();
-        modalId.textContent = data.id;
+        modalId.textContent = `#${data.id}`;
         modalInitials.textContent = `by ${data.initials}`;
         modalCity.textContent = `from ${data.city}`;
         modalAge.textContent = `${data.age} years young`;

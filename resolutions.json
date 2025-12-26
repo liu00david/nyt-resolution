@@ -1,7 +1,7 @@
 [
-    {"id": "001", "resolution": "wake up before sunrise every day", "initials": "DL", "city": "Chicago, USA", "age": 25, "color": "#FFB3BA", "size": 1.0},
-    {"id": "002", "resolution": "complete my first triathlon in june", "initials": "SK", "city": "New York, USA", "age": 32, "color": "#FFDFBA", "size": 1.1},
-    {"id": "003", "resolution": "have real conversations with strangers weekly", "initials": "MJ", "city": "Austin, USA", "age": 28, "color": "#FFFFBA", "size": 0.9},
+    {"id": "001", "resolution": "wake up early", "initials": "DL", "city": "Chicago, USA", "age": 25, "color": "#FFB3BA", "size": 1.0},
+    {"id": "002", "resolution": "complete", "initials": "SK", "city": "New York, USA", "age": 32, "color": "#FFDFBA", "size": 1.1},
+    {"id": "003", "resolution": "have real conversations with strangers weeklyweeklyweeklyweeklyweeklyweeklyweekly", "initials": "MJ", "city": "Austin, USA", "age": 28, "color": "#FFFFBA", "size": 0.9},
     {"id": "004", "resolution": "launch the business i've been dreaming about", "initials": "AP", "city": "San Francisco, USA", "age": 30, "color": "#BAFFC9", "size": 1.1},
     {"id": "005", "resolution": "stop checking phone first thing in morning", "initials": "RG", "city": "Seattle, USA", "age": 27, "color": "#BAE1FF", "size": 1.0},
     {"id": "006", "resolution": "visit six countries across three continents", "initials": "LC", "city": "Boston, USA", "age": 24, "color": "#E0BBE4", "size": 0.9},

@@ -190,7 +190,7 @@ canvas {
     padding: 30px;
     font-family: 'Kalam', 'Patrick Hand', cursive;
     font-weight: 400;
-    font-size: 18px;
+    font-size: 24px;
     color: #333333;
     line-height: 1.4;
     background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent 50%);
@@ -210,7 +210,7 @@ canvas {
 }
 
 .modal-metadata p {
-    font-size: 18px;
+    font-size: 24px;
     opacity: 0.9;
     margin: 0;
 }
