@@ -32,144 +32,128 @@ function darkenColor(color, percent) {
     return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Draw realistic 3D glass jar
+// Draw simple jar with three walls (left, bottom, right) with rounded corners
 function drawGlassJar(context, centerX, centerY, width, height, thickness) {
     const leftX = centerX - width / 2;
     const rightX = centerX + width / 2;
     const topY = centerY - height / 2;
     const bottomY = centerY + height / 2;
-    const cornerRadius = 15;
+    const cornerRadius = 25; // Increased from 15 for more rounded bottom corners
+    const topCurveDepth = 20; // How much the top curves down
 
     context.save();
 
-    // Draw shadow behind jar for 3D depth
-    context.shadowColor = 'rgba(0, 0, 0, 0.15)';
-    context.shadowBlur = 20;
-    context.shadowOffsetX = 0;
-    context.shadowOffsetY = 8;
+    // Draw gradient background fill with rounded top
+    const gradient = context.createLinearGradient(centerX, topY, centerX, bottomY);
+    gradient.addColorStop(0, 'rgba(220, 230, 240, 0.3)');
+    gradient.addColorStop(0.5, 'rgba(200, 215, 230, 0.4)');
+    gradient.addColorStop(1, 'rgba(180, 200, 220, 0.5)');
 
-    // Draw opaque interior background with gradient and rounded bottom corners
-    const interiorGradient = context.createLinearGradient(leftX, topY, leftX, bottomY);
-    interiorGradient.addColorStop(0, 'rgba(220, 230, 240, 0.4)');
-    interiorGradient.addColorStop(0.5, 'rgba(200, 215, 230, 0.5)');
-    interiorGradient.addColorStop(1, 'rgba(180, 200, 220, 0.6)');
-
-    context.fillStyle = interiorGradient;
+    context.fillStyle = gradient;
     context.beginPath();
-    // Start from bottom left, after the corner
-    context.moveTo(leftX + cornerRadius, bottomY);
-    // Bottom edge to bottom right corner
-    context.lineTo(rightX - cornerRadius, bottomY);
+    // Start at top left
+    context.moveTo(leftX, topY);
+    // Top curve - rounded down like a jar opening
+    context.quadraticCurveTo(centerX, topY + topCurveDepth, rightX, topY);
+    // Right wall down to bottom corner
+    context.lineTo(rightX, bottomY - cornerRadius);
     // Bottom right corner - rounded
-    context.arcTo(rightX, bottomY, rightX, bottomY - cornerRadius, cornerRadius);
-    // Right wall - straight to top (jar is open)
-    context.lineTo(rightX, topY);
-    // Top edge - straight across
-    context.lineTo(leftX, topY);
-    // Left wall - straight down to bottom corner
-    context.lineTo(leftX, bottomY - cornerRadius);
-    // Bottom left corner - rounded
-    context.arcTo(leftX, bottomY, leftX + cornerRadius, bottomY, cornerRadius);
-    context.closePath();
-    context.fill();
-
-    // Reset shadow for other elements
-    context.shadowColor = 'transparent';
-    context.shadowBlur = 0;
-    context.shadowOffsetX = 0;
-    context.shadowOffsetY = 0;
-
-    // Draw continuous glass jar path with rounded corners
-    context.beginPath();
-    // Start at bottom left corner
-    context.moveTo(leftX + cornerRadius, bottomY + thickness / 2);
+    context.arcTo(rightX, bottomY, rightX - cornerRadius, bottomY, cornerRadius);
     // Bottom edge
-    context.lineTo(rightX - cornerRadius, bottomY + thickness / 2);
-    // Bottom right corner (outer)
-    context.arcTo(rightX + thickness / 2, bottomY + thickness / 2, rightX + thickness / 2, bottomY - cornerRadius, cornerRadius);
-    // Right wall
-    context.lineTo(rightX + thickness / 2, topY);
-    // Top right (open)
-    context.lineTo(rightX - thickness / 2, topY);
-    // Right inner wall
-    context.lineTo(rightX - thickness / 2, bottomY - cornerRadius);
-    // Bottom right corner (inner)
-    context.arcTo(rightX - thickness / 2, bottomY - thickness / 2, rightX - cornerRadius, bottomY - thickness / 2, cornerRadius);
-    // Bottom inner edge
-    context.lineTo(leftX + cornerRadius, bottomY - thickness / 2);
-    // Bottom left corner (inner)
-    context.arcTo(leftX + thickness / 2, bottomY - thickness / 2, leftX + thickness / 2, bottomY - cornerRadius, cornerRadius);
-    // Left inner wall
-    context.lineTo(leftX + thickness / 2, topY);
-    // Top left (open)
-    context.lineTo(leftX - thickness / 2, topY);
-    // Left outer wall
-    context.lineTo(leftX - thickness / 2, bottomY - cornerRadius);
-    // Bottom left corner (outer)
-    context.arcTo(leftX - thickness / 2, bottomY + thickness / 2, leftX + cornerRadius, bottomY + thickness / 2, cornerRadius);
+    context.lineTo(leftX + cornerRadius, bottomY);
+    // Bottom left corner - rounded
+    context.arcTo(leftX, bottomY, leftX, bottomY - cornerRadius, cornerRadius);
+    // Left wall back up to top
+    context.lineTo(leftX, topY);
     context.closePath();
-
-    // Create gradient for glass effect
-    const glassGradient = context.createLinearGradient(leftX - thickness, centerY, rightX + thickness, centerY);
-    glassGradient.addColorStop(0, 'rgba(200, 220, 240, 0.35)');
-    glassGradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.5)');
-    glassGradient.addColorStop(0.5, 'rgba(180, 200, 220, 0.3)');
-    glassGradient.addColorStop(0.85, 'rgba(255, 255, 255, 0.5)');
-    glassGradient.addColorStop(1, 'rgba(200, 220, 240, 0.35)');
-
-    context.fillStyle = glassGradient;
     context.fill();
 
-    // Add glass rim highlight
-    context.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-    context.lineWidth = 2;
+    // Draw glass walls with thickness
+    // Left wall
+    const leftGradient = context.createLinearGradient(leftX - thickness, centerY, leftX + thickness, centerY);
+    leftGradient.addColorStop(0, 'rgba(200, 220, 240, 0.4)');
+    leftGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.6)');
+    leftGradient.addColorStop(0.7, 'rgba(180, 200, 220, 0.3)');
+    leftGradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+
+    context.fillStyle = leftGradient;
+    context.beginPath();
+    context.moveTo(leftX - thickness/2, topY);
+    context.lineTo(leftX - thickness/2, bottomY - cornerRadius);
+    context.arcTo(leftX - thickness/2, bottomY + thickness/2, leftX + cornerRadius, bottomY + thickness/2, cornerRadius);
+    context.lineTo(leftX + thickness/2, bottomY - thickness/2);
+    context.arcTo(leftX + thickness/2, bottomY - thickness/2, leftX + thickness/2, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(leftX + thickness/2, topY);
+    context.closePath();
+    context.fill();
+
+    // Right wall
+    const rightGradient = context.createLinearGradient(rightX - thickness, centerY, rightX + thickness, centerY);
+    rightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+    rightGradient.addColorStop(0.3, 'rgba(180, 200, 220, 0.3)');
+    rightGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.6)');
+    rightGradient.addColorStop(1, 'rgba(200, 220, 240, 0.4)');
+
+    context.fillStyle = rightGradient;
+    context.beginPath();
+    context.moveTo(rightX - thickness/2, topY);
+    context.lineTo(rightX - thickness/2, bottomY - cornerRadius);
+    context.arcTo(rightX - thickness/2, bottomY - thickness/2, rightX - cornerRadius, bottomY - thickness/2, cornerRadius);
+    context.lineTo(rightX + thickness/2, bottomY + thickness/2);
+    context.arcTo(rightX + thickness/2, bottomY + thickness/2, rightX + thickness/2, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(rightX + thickness/2, topY);
+    context.closePath();
+    context.fill();
+
+    // Bottom wall
+    const bottomGradient = context.createLinearGradient(centerX, bottomY - thickness, centerX, bottomY + thickness);
+    bottomGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+    bottomGradient.addColorStop(0.4, 'rgba(180, 200, 220, 0.3)');
+    bottomGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.5)');
+    bottomGradient.addColorStop(1, 'rgba(200, 220, 240, 0.4)');
+
+    context.fillStyle = bottomGradient;
+    context.beginPath();
+    // Outer bottom edge
+    context.moveTo(leftX + cornerRadius, bottomY + thickness/2);
+    context.lineTo(rightX - cornerRadius, bottomY + thickness/2);
+    context.arcTo(rightX + thickness/2, bottomY + thickness/2, rightX + thickness/2, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(rightX + thickness/2, bottomY - thickness/2);
+    context.arcTo(rightX + thickness/2, bottomY - thickness/2, rightX - cornerRadius, bottomY - thickness/2, cornerRadius);
+    // Inner bottom edge
+    context.lineTo(leftX + cornerRadius, bottomY - thickness/2);
+    context.arcTo(leftX - thickness/2, bottomY - thickness/2, leftX - thickness/2, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(leftX - thickness/2, bottomY + thickness/2);
+    context.arcTo(leftX - thickness/2, bottomY + thickness/2, leftX + cornerRadius, bottomY + thickness/2, cornerRadius);
+    context.closePath();
+    context.fill();
+
+    // Add subtle edge highlights for definition
+    context.strokeStyle = 'rgba(100, 120, 140, 0.3)';
+    context.lineWidth = 1.5;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+
+    // Outer edge - darker
+    context.beginPath();
+    context.moveTo(leftX, topY);
+    context.lineTo(leftX, bottomY - cornerRadius);
+    context.arcTo(leftX, bottomY, leftX + cornerRadius, bottomY, cornerRadius);
+    context.lineTo(rightX - cornerRadius, bottomY);
+    context.arcTo(rightX, bottomY, rightX, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(rightX, topY);
     context.stroke();
 
-    // Add inner shadow for depth
-    context.save();
-    context.clip();
-    context.shadowColor = 'rgba(100, 120, 140, 0.15)';
-    context.shadowBlur = 8;
-    context.shadowOffsetX = 0;
-    context.shadowOffsetY = -5;
-
-    context.strokeStyle = 'rgba(120, 140, 160, 0.3)';
-    context.lineWidth = 3;
+    // Inner edge - lighter
+    context.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    context.lineWidth = 1;
     context.beginPath();
-    // Inner edge path
-    context.moveTo(leftX + cornerRadius, bottomY - thickness / 2);
-    context.lineTo(rightX - cornerRadius, bottomY - thickness / 2);
-    context.arcTo(rightX - thickness / 2, bottomY - thickness / 2, rightX - thickness / 2, bottomY - cornerRadius - thickness / 2, cornerRadius);
-    context.lineTo(rightX - thickness / 2, topY + 5);
-    context.moveTo(leftX + thickness / 2, topY + 5);
-    context.lineTo(leftX + thickness / 2, bottomY - cornerRadius);
-    context.arcTo(leftX + thickness / 2, bottomY - thickness / 2, leftX + cornerRadius, bottomY - thickness / 2, cornerRadius);
-    context.stroke();
-    context.restore();
-
-    // Add vertical highlights on sides
-    const leftHighlight = context.createLinearGradient(leftX - thickness / 2, topY, leftX + thickness, topY);
-    leftHighlight.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    leftHighlight.addColorStop(0.5, 'rgba(255, 255, 255, 0.6)');
-    leftHighlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-    context.strokeStyle = leftHighlight;
-    context.lineWidth = 3;
-    context.beginPath();
-    context.moveTo(leftX, topY + 20);
-    context.lineTo(leftX, bottomY - cornerRadius - 20);
-    context.stroke();
-
-    const rightHighlight = context.createLinearGradient(rightX - thickness, topY, rightX + thickness / 2, topY);
-    rightHighlight.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    rightHighlight.addColorStop(0.5, 'rgba(255, 255, 255, 0.6)');
-    rightHighlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-    context.strokeStyle = rightHighlight;
-    context.lineWidth = 3;
-    context.beginPath();
-    context.moveTo(rightX, topY + 20);
-    context.lineTo(rightX, bottomY - cornerRadius - 20);
+    context.moveTo(leftX + thickness, topY);
+    context.lineTo(leftX + thickness, bottomY - cornerRadius);
+    context.arcTo(leftX + thickness, bottomY - thickness, leftX + cornerRadius, bottomY - thickness, cornerRadius);
+    context.lineTo(rightX - cornerRadius, bottomY - thickness);
+    context.arcTo(rightX - thickness, bottomY - thickness, rightX - thickness, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(rightX - thickness, topY);
     context.stroke();
 
     context.restore();
