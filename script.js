@@ -216,7 +216,7 @@ function setupPhysics() {
     // Jar height based on number of marbles
     // Simple linear formula: height = max(330, 9.2*N + 150)
     const N = resolutionData.length;
-    const jarHeight = Math.max(330, 9.2 * N + 150);
+    const jarHeight = Math.max(500, 9.2 * N + 150);
 
     console.log(`Jar dimensions: ${jarWidth}px wide x ${jarHeight.toFixed(0)}px tall for ${resolutionData.length} marbles`)
 
@@ -440,8 +440,14 @@ function setupPhysics() {
             context.imageSmoothingEnabled = true;
             context.imageSmoothingQuality = 'high';
 
-            // Word wrap the text to fit in circle (lowercase)
-            const words = text.toLowerCase().split(' ');
+            // Truncate text to 50 characters if needed
+            let displayText = text.toLowerCase();
+            if (displayText.length > 50) {
+                displayText = displayText.substring(0, 50) + '...';
+            }
+
+            // Word wrap the text to fit in circle
+            const words = displayText.split(' ');
             const lines = [];
             let currentLine = words[0];
 
@@ -553,10 +559,19 @@ function setupInteractions() {
         const data = marble.resolutionData;
         const color = marble.marbleColor;
 
+        // Format resolution - truncate to 50 characters if needed
+        let resolution = data.resolution.toLowerCase();
+        if (resolution.length > 50) {
+            resolution = resolution.substring(0, 50) + '...';
+        }
+
+        // Format initials - add dots between letters (e.g., "DL" -> "D.L.")
+        const formattedInitials = data.initials.split('').join('.') + '.';
+
         modalMarble.style.backgroundColor = color;
-        modalMarble.textContent = data.resolution.toLowerCase();
+        modalMarble.textContent = resolution;
         modalId.textContent = `#${data.id}`;
-        modalInitials.textContent = `by ${data.initials}`;
+        modalInitials.textContent = `by ${formattedInitials}`;
         modalCity.textContent = `from ${data.city}`;
         modalAge.textContent = `${data.age} years young`;
 
