@@ -15,6 +15,59 @@ let startTime = Date.now();
 let spawnedMarbles = 0; // Count marbles as they spawn into view
 let jarTopY = 0;
 
+// Helper function to ensure color has # prefix
+function normalizeColor(color) {
+    if (!color) return '#FFB3BA'; // Default color if missing
+    // If color doesn't start with #, add it
+    return color.startsWith('#') ? color : `#${color}`;
+}
+
+// Helper function to convert size string to multiplier
+function normalizeSize(size) {
+    // Handle null/undefined
+    if (!size) return 1.0;
+
+    // If already a number, validate and return it
+    if (typeof size === 'number') {
+        return (isFinite(size) && size > 0) ? size : 1.0;
+    }
+
+    // Convert string to lowercase for case-insensitive matching
+    const sizeStr = String(size).toLowerCase().trim();
+
+    // Map size strings to multipliers
+    switch (sizeStr) {
+        case 'small':
+            return 0.85;
+        case 'medium':
+            return 1.0;
+        case 'large':
+            return 1.15;
+        default:
+            // Try to parse as number, default to 1.0
+            const parsed = parseFloat(size);
+            return (isFinite(parsed) && parsed > 0) ? parsed : 1.0;
+    }
+}
+
+// Helper function to determine if a color is dark (needs white text)
+function isColorDark(color) {
+    // Remove # if present
+    const hex = color.replace('#', '');
+
+    // Convert to RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // Calculate relative luminance (perceived brightness)
+    // Using the formula: (0.299*R + 0.587*G + 0.114*B)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+
+    // If luminance is less than 128 (half of 255), it's dark
+    return luminance < 128;
+}
+
 // Helper functions for color manipulation
 function lightenColor(color, percent) {
     const num = parseInt(color.replace("#", ""), 16);
@@ -162,9 +215,8 @@ function drawGlassJar(context, centerX, centerY, width, height, thickness) {
 // Initialize the application
 async function init() {
     try {
-        // Try to load resolution data from JSON
-        const response = await fetch('resolutions.json');
-        if (!response.ok) throw new Error('Failed to load JSON');
+        const response = await fetch('https://script.google.com/macros/s/AKfycbzANbs-5NxxmJaeQIFv6DPzZ_G00MzObbuj0MhTh1GChN9Ri2gwDzB5StdZHsC_g_yiBQ/exec');
+        if (!response.ok) throw new Error('Failed to load data');
         resolutionData = await response.json();
     } catch (error) {
         console.log('Loading from embedded data (use a local server to load from JSON)');
@@ -221,7 +273,8 @@ function setupPhysics() {
     console.log(`Jar dimensions: ${jarWidth}px wide x ${jarHeight.toFixed(0)}px tall for ${resolutionData.length} marbles`)
 
     // Set canvas height to fit jar exactly
-    const topMargin = 200;
+    // Increased margins for better spacing: banner -> counter -> jar
+    const topMargin = 250; // Space for banner + counter with equal spacing
     const bottomMargin = 80;
     const canvasHeight = topMargin + jarHeight + bottomMargin;
 
@@ -244,10 +297,10 @@ function setupPhysics() {
     const jarY = topMargin + jarHeight / 2;
     jarTopY = jarY - jarHeight / 2; // Store jar top position globally
 
-    // Position counter above jar - properly centered
+    // Position counter above jar - properly centered with equidistant spacing
     const counterElement = document.getElementById('counter');
     counterElement.style.left = '50%';
-    counterElement.style.top = `${jarTopY - 60}px`;
+    counterElement.style.top = `${jarTopY - 80}px`; // Increased from 60 to 80 for more space
     counterElement.style.transform = 'translateX(-50%)';
 
     // Create invisible jar walls (physics only, custom rendering)
@@ -305,7 +358,13 @@ function setupPhysics() {
     // Create marbles from JSON data (spawn from top of screen)
     for (let i = 0; i < resolutionData.length; i++) {
         const data = resolutionData[i];
-        const sizeMultiplier = data.size || 1.0; // Default to 1.0 if not specified
+        const sizeMultiplier = normalizeSize(data.size); // Convert "Small/Medium/Large" to number
+        const normalizedColor = normalizeColor(data.color); // Ensure # prefix
+
+        // Debug: Log first marble's size for verification
+        if (i === 0) {
+            console.log('First marble - raw size:', data.size, '→ multiplier:', sizeMultiplier);
+        }
         const marble = Bodies.circle(
             jarX + (Math.random() - 0.5) * (jarWidth * 0.3),
             -100 - (i * marbleRadius * 2.5), // Start above the visible canvas
@@ -318,12 +377,12 @@ function setupPhysics() {
                 slop: 0,
                 sleepThreshold: 60, // Default threshold - prevents premature freezing
                 render: {
-                    fillStyle: data.color,
+                    fillStyle: normalizedColor,
                     strokeStyle: '#ffffff',
                     lineWidth: 2
                 },
                 resolutionData: data,
-                marbleColor: data.color
+                marbleColor: normalizedColor
             }
         );
         marbles.push(marble);
@@ -369,6 +428,12 @@ function setupPhysics() {
             const data = marble.resolutionData;
             const text = data.resolution;
             const id = data.id;
+
+            // Skip rendering if radius is invalid
+            if (!radius || !isFinite(radius) || radius <= 0) {
+                console.warn('Invalid marble radius:', radius, 'for marble:', data);
+                return;
+            }
 
             // Check if this marble matches the search filters
             const hasActiveFilters = searchFilters.id || searchFilters.resolution || searchFilters.initials || searchFilters.city;
@@ -431,20 +496,51 @@ function setupPhysics() {
             context.translate(-pos.x, -pos.y);
 
             // Set text style with improved rendering (translucent)
-            context.fillStyle = isFiltered ? 'rgba(120, 120, 120, 0.5)' : 'rgba(74, 74, 74, 0.75)';
+            // Use white text for dark marbles, dark text for light marbles
+            const isDark = isColorDark(color);
+            let textColor;
+            if (isFiltered) {
+                textColor = 'rgba(120, 120, 120, 0.5)';
+            } else if (isDark) {
+                textColor = 'rgba(255, 255, 255, 0.85)'; // White text for dark marbles
+            } else {
+                textColor = 'rgba(74, 74, 74, 0.75)'; // Dark text for light marbles
+            }
+            context.fillStyle = textColor;
             context.textAlign = 'center';
             context.textBaseline = 'middle';
-            context.font = `${radius * 0.22}px 'Kalam', 'Patrick Hand', 'Caveat', cursive`;
-
-            // Improve text rendering quality
-            context.imageSmoothingEnabled = true;
-            context.imageSmoothingQuality = 'high';
 
             // Truncate text to 50 characters if needed
             let displayText = text.toLowerCase();
             if (displayText.length > 50) {
                 displayText = displayText.substring(0, 50) + '...';
             }
+
+            // Dynamic font size based on text length
+            // Short text = larger font, long text = smaller font
+            const textLength = displayText.length;
+            const minFontSize = radius * 0.15;  // Minimum font size (for long text)
+            const maxFontSize = radius * 0.28;  // Maximum font size (for short text)
+
+            // Scale font size inversely with text length
+            // Short text (10 chars) → maxFontSize
+            // Long text (50+ chars) → minFontSize
+            let fontSize;
+            if (textLength <= 10) {
+                fontSize = maxFontSize;
+            } else if (textLength >= 50) {
+                fontSize = minFontSize;
+            } else {
+                // Linear interpolation between min and max
+                const ratio = (textLength - 10) / (50 - 10);
+                fontSize = maxFontSize - (ratio * (maxFontSize - minFontSize));
+            }
+
+            context.font = `${fontSize}px 'Kalam', 'Patrick Hand', 'Caveat', cursive`;
+
+            // Improve text rendering quality
+            context.imageSmoothingEnabled = true;
+            context.imageSmoothingQuality = 'high';
 
             // Word wrap the text to fit in circle
             const words = displayText.split(' ');
@@ -568,12 +664,24 @@ function setupInteractions() {
         // Format initials - add dots between letters (e.g., "DL" -> "D.L.")
         const formattedInitials = data.initials.split('').join('.') + '.';
 
+        // Use white text for dark marbles, dark text for light marbles
+        const isDark = isColorDark(color);
+        const textColor = isDark ? '#ffffff' : '#333333';
+
         modalMarble.style.backgroundColor = color;
+        modalMarble.style.color = textColor; // Set text color based on background
         modalMarble.textContent = resolution;
         modalId.textContent = `#${data.id}`;
         modalInitials.textContent = `by ${formattedInitials}`;
         modalCity.textContent = `from ${data.city}`;
-        modalAge.textContent = `${data.age} years young`;
+
+        // Only show age if it exists
+        if (data.age) {
+            modalAge.textContent = `${data.age} years young`;
+            modalAge.style.display = 'block';
+        } else {
+            modalAge.style.display = 'none';
+        }
 
         modal.classList.add('active');
     }

@@ -85,7 +85,7 @@ canvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 /* Title */
@@ -129,6 +129,21 @@ canvas {
 
 #search-container input:focus {
     background: rgba(200, 200, 200, 0.4);
+}
+
+/* Submit Link */
+#submit-link {
+    font-family: 'Kalam', 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: #2a2a2a;
+    text-decoration: underline;
+    text-align: center;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+#submit-link:hover {
+    opacity: 0.6;
 }
 
 /* Modal styles */
@@ -190,7 +205,7 @@ canvas {
     padding: 30px;
     font-family: 'Kalam', 'Patrick Hand', cursive;
     font-weight: 400;
-    font-size: 24px;
+    font-size: 26px;
     color: #333333;
     line-height: 1.4;
     background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent 50%);
@@ -229,6 +244,8 @@ canvas {
     max-width: 100vw;
     overflow: visible;
     white-space: nowrap;
+    /* Add spacing above and below */
+    padding: 15px 0;
 }
 
 /* Watermark */
