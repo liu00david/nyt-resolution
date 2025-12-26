@@ -5,14 +5,8 @@ const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
 let resolutionData = [];
 let marbles = [];
 let engine, render, world;
-let searchFilters = {
-    id: '',
-    resolution: '',
-    initials: '',
-    city: ''
-};
-let startTime = Date.now();
-let spawnedMarbles = 0; // Count marbles as they spawn into view
+let searchFilters = { id: '', resolution: '', initials: '', city: '' };
+let spawnedMarbles = 0;
 let jarTopY = 0;
 
 // Helper function to ensure color has # prefix
@@ -50,163 +44,135 @@ function normalizeSize(size) {
     }
 }
 
-// Helper function to determine if a color is dark (needs white text)
-function isColorDark(color) {
-    // Remove # if present
+// Parse hex color to RGB components
+function hexToRgb(color) {
     const hex = color.replace('#', '');
-
-    // Convert to RGB
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-
-    // Calculate relative luminance (perceived brightness)
-    // Using the formula: (0.299*R + 0.587*G + 0.114*B)
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
-
-    // If luminance is less than 128 (half of 255), it's dark
-    return luminance < 128;
+    return {
+        r: parseInt(hex.substring(0, 2), 16),
+        g: parseInt(hex.substring(2, 4), 16),
+        b: parseInt(hex.substring(4, 6), 16)
+    };
 }
 
-// Helper functions for color manipulation
-function lightenColor(color, percent) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const r = Math.min(255, ((num >> 16) & 0xff) + Math.round(2.55 * percent));
-    const g = Math.min(255, ((num >> 8) & 0xff) + Math.round(2.55 * percent));
-    const b = Math.min(255, (num & 0xff) + Math.round(2.55 * percent));
-    return `rgb(${r}, ${g}, ${b})`;
+// Check if color is dark (needs white text)
+function isColorDark(color) {
+    const { r, g, b } = hexToRgb(color);
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 128;
 }
 
-function darkenColor(color, percent) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const r = Math.max(0, ((num >> 16) & 0xff) - Math.round(2.55 * percent));
-    const g = Math.max(0, ((num >> 8) & 0xff) - Math.round(2.55 * percent));
-    const b = Math.max(0, (num & 0xff) - Math.round(2.55 * percent));
-    return `rgb(${r}, ${g}, ${b})`;
+// Adjust color brightness
+function adjustColor(color, percent) {
+    const { r, g, b } = hexToRgb(color);
+    const adjust = Math.round(2.55 * percent);
+    const clamp = (val) => Math.max(0, Math.min(255, val));
+    return `rgb(${clamp(r + adjust)}, ${clamp(g + adjust)}, ${clamp(b + adjust)})`;
 }
 
-// Draw simple jar with three walls (left, bottom, right) with rounded corners
+// Truncate text to max length
+function truncateText(text, maxLength = 50) {
+    const lower = text.toLowerCase();
+    return lower.length > maxLength ? lower.substring(0, maxLength) + '...' : lower;
+}
+
+// Helper to draw jar path (reusable for fill and stroke)
+function createJarPath(context, leftX, rightX, topY, bottomY, cornerRadius, topCurveDepth = 20) {
+    context.beginPath();
+    context.moveTo(leftX, topY);
+    context.quadraticCurveTo(leftX + (rightX - leftX) / 2, topY + topCurveDepth, rightX, topY);
+    context.lineTo(rightX, bottomY - cornerRadius);
+    context.arcTo(rightX, bottomY, rightX - cornerRadius, bottomY, cornerRadius);
+    context.lineTo(leftX + cornerRadius, bottomY);
+    context.arcTo(leftX, bottomY, leftX, bottomY - cornerRadius, cornerRadius);
+    context.lineTo(leftX, topY);
+}
+
+// Draw jar with three walls
 function drawGlassJar(context, centerX, centerY, width, height, thickness) {
-    const leftX = centerX - width / 2;
-    const rightX = centerX + width / 2;
-    const topY = centerY - height / 2;
-    const bottomY = centerY + height / 2;
-    const cornerRadius = 25; // Increased from 15 for more rounded bottom corners
-    const topCurveDepth = 20; // How much the top curves down
+    const halfW = width / 2, halfH = height / 2;
+    const leftX = centerX - halfW, rightX = centerX + halfW;
+    const topY = centerY - halfH, bottomY = centerY + halfH;
+    const cornerRadius = 25;
+    const t = thickness, t2 = t / 2;
 
     context.save();
 
-    // Draw gradient background fill with rounded top
-    const gradient = context.createLinearGradient(centerX, topY, centerX, bottomY);
-    gradient.addColorStop(0, 'rgba(228, 233, 238, 0.5)');
-    gradient.addColorStop(0.5, 'rgba(210, 218, 225, 0.6)');
-    gradient.addColorStop(1, 'rgba(193, 203, 213, 0.7)');
-
-    context.fillStyle = gradient;
-    context.beginPath();
-    // Start at top left
-    context.moveTo(leftX, topY);
-    // Top curve - rounded down like a jar opening
-    context.quadraticCurveTo(centerX, topY + topCurveDepth, rightX, topY);
-    // Right wall down to bottom corner
-    context.lineTo(rightX, bottomY - cornerRadius);
-    // Bottom right corner - rounded
-    context.arcTo(rightX, bottomY, rightX - cornerRadius, bottomY, cornerRadius);
-    // Bottom edge
-    context.lineTo(leftX + cornerRadius, bottomY);
-    // Bottom left corner - rounded
-    context.arcTo(leftX, bottomY, leftX, bottomY - cornerRadius, cornerRadius);
-    // Left wall back up to top
-    context.lineTo(leftX, topY);
-    context.closePath();
+    // Background fill
+    const bgGrad = context.createLinearGradient(centerX, topY, centerX, bottomY);
+    bgGrad.addColorStop(0, 'rgba(228, 233, 238, 0.5)');
+    bgGrad.addColorStop(0.5, 'rgba(210, 218, 225, 0.6)');
+    bgGrad.addColorStop(1, 'rgba(193, 203, 213, 0.7)');
+    context.fillStyle = bgGrad;
+    createJarPath(context, leftX, rightX, topY, bottomY, cornerRadius);
     context.fill();
 
-    // Draw glass walls with thickness
+    // Wall helper
+    const drawWall = (grad, path) => {
+        context.fillStyle = grad;
+        context.beginPath();
+        path();
+        context.closePath();
+        context.fill();
+    };
+
     // Left wall
-    const leftGradient = context.createLinearGradient(leftX - thickness, centerY, leftX + thickness, centerY);
-    leftGradient.addColorStop(0, 'rgba(208, 218, 228, 0.6)');
-    leftGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.7)');
-    leftGradient.addColorStop(0.7, 'rgba(190, 203, 215, 0.5)');
-    leftGradient.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
-
-    context.fillStyle = leftGradient;
-    context.beginPath();
-    context.moveTo(leftX - thickness/2, topY);
-    context.lineTo(leftX - thickness/2, bottomY - cornerRadius);
-    context.arcTo(leftX - thickness/2, bottomY + thickness/2, leftX + cornerRadius, bottomY + thickness/2, cornerRadius);
-    context.lineTo(leftX + thickness/2, bottomY - thickness/2);
-    context.arcTo(leftX + thickness/2, bottomY - thickness/2, leftX + thickness/2, bottomY - cornerRadius, cornerRadius);
-    context.lineTo(leftX + thickness/2, topY);
-    context.closePath();
-    context.fill();
+    const leftGrad = context.createLinearGradient(leftX - t, centerY, leftX + t, centerY);
+    leftGrad.addColorStop(0, 'rgba(208, 218, 228, 0.6)');
+    leftGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.7)');
+    leftGrad.addColorStop(0.7, 'rgba(190, 203, 215, 0.5)');
+    leftGrad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+    drawWall(leftGrad, () => {
+        context.moveTo(leftX - t2, topY);
+        context.lineTo(leftX - t2, bottomY - cornerRadius);
+        context.arcTo(leftX - t2, bottomY, leftX + cornerRadius, bottomY, cornerRadius);
+        context.lineTo(leftX + cornerRadius, bottomY);
+        context.arcTo(leftX, bottomY, leftX, bottomY - cornerRadius, cornerRadius);
+        context.lineTo(leftX, topY);
+    });
 
     // Right wall
-    const rightGradient = context.createLinearGradient(rightX - thickness, centerY, rightX + thickness, centerY);
-    rightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-    rightGradient.addColorStop(0.3, 'rgba(190, 203, 215, 0.5)');
-    rightGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.7)');
-    rightGradient.addColorStop(1, 'rgba(208, 218, 228, 0.6)');
-
-    context.fillStyle = rightGradient;
-    context.beginPath();
-    context.moveTo(rightX - thickness/2, topY);
-    context.lineTo(rightX - thickness/2, bottomY - cornerRadius);
-    context.arcTo(rightX - thickness/2, bottomY - thickness/2, rightX - cornerRadius, bottomY - thickness/2, cornerRadius);
-    context.lineTo(rightX + thickness/2, bottomY + thickness/2);
-    context.arcTo(rightX + thickness/2, bottomY + thickness/2, rightX + thickness/2, bottomY - cornerRadius, cornerRadius);
-    context.lineTo(rightX + thickness/2, topY);
-    context.closePath();
-    context.fill();
+    const rightGrad = context.createLinearGradient(rightX - t, centerY, rightX + t, centerY);
+    rightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+    rightGrad.addColorStop(0.3, 'rgba(190, 203, 215, 0.5)');
+    rightGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.7)');
+    rightGrad.addColorStop(1, 'rgba(208, 218, 228, 0.6)');
+    drawWall(rightGrad, () => {
+        context.moveTo(rightX + t2, topY);
+        context.lineTo(rightX + t2, bottomY - cornerRadius);
+        context.arcTo(rightX + t2, bottomY, rightX - cornerRadius, bottomY, cornerRadius);
+        context.lineTo(rightX - cornerRadius, bottomY);
+        context.arcTo(rightX, bottomY, rightX, bottomY - cornerRadius, cornerRadius);
+        context.lineTo(rightX, topY);
+    });
 
     // Bottom wall
-    const bottomGradient = context.createLinearGradient(centerX, bottomY - thickness, centerX, bottomY + thickness);
-    bottomGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-    bottomGradient.addColorStop(0.4, 'rgba(190, 203, 215, 0.5)');
-    bottomGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.6)');
-    bottomGradient.addColorStop(1, 'rgba(208, 218, 228, 0.6)');
+    const bottomGrad = context.createLinearGradient(centerX, bottomY - t, centerX, bottomY + t);
+    bottomGrad.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+    bottomGrad.addColorStop(0.4, 'rgba(190, 203, 215, 0.5)');
+    bottomGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.6)');
+    bottomGrad.addColorStop(1, 'rgba(208, 218, 228, 0.6)');
+    drawWall(bottomGrad, () => {
+        context.moveTo(leftX + cornerRadius, bottomY);
+        context.arcTo(leftX, bottomY, leftX, bottomY - cornerRadius, cornerRadius);
+        context.lineTo(leftX, bottomY - t2);
+        context.arcTo(leftX, bottomY - t2, leftX + cornerRadius, bottomY - t2, cornerRadius - t2);
+        context.lineTo(rightX - cornerRadius, bottomY - t2);
+        context.arcTo(rightX, bottomY - t2, rightX, bottomY - cornerRadius, cornerRadius - t2);
+        context.lineTo(rightX, bottomY - cornerRadius);
+        context.arcTo(rightX, bottomY, rightX - cornerRadius, bottomY, cornerRadius);
+    });
 
-    context.fillStyle = bottomGradient;
-    context.beginPath();
-    // Outer bottom edge
-    context.moveTo(leftX + cornerRadius, bottomY + thickness/2);
-    context.lineTo(rightX - cornerRadius, bottomY + thickness/2);
-    context.arcTo(rightX + thickness/2, bottomY + thickness/2, rightX + thickness/2, bottomY - cornerRadius, cornerRadius);
-    context.lineTo(rightX + thickness/2, bottomY - thickness/2);
-    context.arcTo(rightX + thickness/2, bottomY - thickness/2, rightX - cornerRadius, bottomY - thickness/2, cornerRadius);
-    // Inner bottom edge
-    context.lineTo(leftX + cornerRadius, bottomY - thickness/2);
-    context.arcTo(leftX - thickness/2, bottomY - thickness/2, leftX - thickness/2, bottomY - cornerRadius, cornerRadius);
-    context.lineTo(leftX - thickness/2, bottomY + thickness/2);
-    context.arcTo(leftX - thickness/2, bottomY + thickness/2, leftX + cornerRadius, bottomY + thickness/2, cornerRadius);
-    context.closePath();
-    context.fill();
-
-    // Add subtle edge highlights for definition
-    context.strokeStyle = 'rgba(100, 120, 140, 0.5)';
-    context.lineWidth = 1.5;
+    // Edge outlines
     context.lineCap = 'round';
     context.lineJoin = 'round';
 
-    // Outer edge - darker
-    context.beginPath();
-    context.moveTo(leftX, topY);
-    context.lineTo(leftX, bottomY - cornerRadius);
-    context.arcTo(leftX, bottomY, leftX + cornerRadius, bottomY, cornerRadius);
-    context.lineTo(rightX - cornerRadius, bottomY);
-    context.arcTo(rightX, bottomY, rightX, bottomY - cornerRadius, cornerRadius);
-    context.lineTo(rightX, topY);
+    context.strokeStyle = 'rgba(100, 120, 140, 0.5)';
+    context.lineWidth = 1.5;
+    createJarPath(context, leftX, rightX, topY, bottomY, cornerRadius, 0);
     context.stroke();
 
-    // Inner edge - lighter
     context.strokeStyle = 'rgba(255, 255, 255, 0.5)';
     context.lineWidth = 1;
-    context.beginPath();
-    context.moveTo(leftX + thickness, topY);
-    context.lineTo(leftX + thickness, bottomY - cornerRadius);
-    context.arcTo(leftX + thickness, bottomY - thickness, leftX + cornerRadius, bottomY - thickness, cornerRadius);
-    context.lineTo(rightX - cornerRadius, bottomY - thickness);
-    context.arcTo(rightX - thickness, bottomY - thickness, rightX - thickness, bottomY - cornerRadius, cornerRadius);
-    context.lineTo(rightX - thickness, topY);
+    createJarPath(context, leftX + t, rightX - t, topY, bottomY - t, cornerRadius, 0);
     context.stroke();
 
     context.restore();
@@ -255,13 +221,11 @@ function setupPhysics() {
     world = engine.world;
     engine.world.gravity.y = 0.8;
 
-    // Get viewport dimensions (phone optimized)
+    // Get viewport width
     const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
 
-    // Fixed jar width to mimic mobile view (typical phone width ~375-428px)
-    const fixedJarWidth = 330; // Fixed width regardless of screen size
-    const jarWidth = fixedJarWidth;
+    // Fixed jar dimensions
+    const jarWidth = 330;
     const marbleRadius = jarWidth / 12;
     const wallThickness = 20;
 
@@ -303,57 +267,14 @@ function setupPhysics() {
     counterElement.style.top = `${jarTopY - 80}px`; // Increased from 60 to 80 for more space
     counterElement.style.transform = 'translateX(-50%)';
 
-    // Create invisible jar walls (physics only, custom rendering)
-    const jarBottom = Bodies.rectangle(
-        jarX,
-        jarY + jarHeight / 2,
-        jarWidth,
-        wallThickness,
-        {
-            isStatic: true,
-            friction: 0.8, // Increased friction on bottom
-            restitution: 0.2, // Reduced bounce on bottom
-            slop: 0,
-            render: {
-                visible: false
-            }
-        }
-    );
-
-    const jarLeftWall = Bodies.rectangle(
-        jarX - jarWidth / 2,
-        jarY,
-        wallThickness,
-        jarHeight,
-        {
-            isStatic: true,
-            friction: 0.5,
-            restitution: 0.2, // Reduced bounce on walls
-            slop: 0,
-            render: {
-                visible: false
-            }
-        }
-    );
-
-    const jarRightWall = Bodies.rectangle(
-        jarX + jarWidth / 2,
-        jarY,
-        wallThickness,
-        jarHeight,
-        {
-            isStatic: true,
-            friction: 0.5,
-            restitution: 0.2, // Reduced bounce on walls
-            slop: 0,
-            render: {
-                visible: false
-            }
-        }
-    );
-
-    // Add jar to world
-    Composite.add(world, [jarBottom, jarLeftWall, jarRightWall]);
+    // Create invisible jar walls
+    const wallConfig = { isStatic: true, restitution: 0.2, slop: 0, render: { visible: false } };
+    const walls = [
+        Bodies.rectangle(jarX, jarY + jarHeight / 2, jarWidth, wallThickness, { ...wallConfig, friction: 0.8 }),
+        Bodies.rectangle(jarX - jarWidth / 2, jarY, wallThickness, jarHeight, { ...wallConfig, friction: 0.5 }),
+        Bodies.rectangle(jarX + jarWidth / 2, jarY, wallThickness, jarHeight, { ...wallConfig, friction: 0.5 })
+    ];
+    Composite.add(world, walls);
 
     // Create marbles from JSON data (spawn from top of screen)
     for (let i = 0; i < resolutionData.length; i++) {
@@ -462,9 +383,9 @@ function setupPhysics() {
                 gradient.addColorStop(0.4, 'rgba(180, 180, 180, 0.5)');
                 gradient.addColorStop(1, 'rgba(160, 160, 160, 0.4)');
             } else {
-                gradient.addColorStop(0, lightenColor(color, 40));
+                gradient.addColorStop(0, adjustColor(color, 40));
                 gradient.addColorStop(0.4, color);
-                gradient.addColorStop(1, darkenColor(color, 20));
+                gradient.addColorStop(1, adjustColor(color, -20));
             }
 
             context.beginPath();
@@ -510,11 +431,7 @@ function setupPhysics() {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
 
-            // Truncate text to 50 characters if needed
-            let displayText = text.toLowerCase();
-            if (displayText.length > 50) {
-                displayText = displayText.substring(0, 50) + '...';
-            }
+            const displayText = truncateText(text);
 
             // Dynamic font size based on text length
             // Short text = larger font, long text = smaller font
@@ -564,7 +481,7 @@ function setupPhysics() {
             // Draw each line centered vertically
             const lineHeight = radius * 0.28;
             const totalHeight = lines.length * lineHeight;
-            const startY = pos.y - totalHeight / 2 + lineHeight / 2;
+            const startY = pos.y - totalHeight / 2 + lineHeight / 2 + 1;
 
             lines.forEach((line, index) => {
                 context.fillText(line, pos.x, startY + index * lineHeight);
@@ -581,43 +498,21 @@ function setupPhysics() {
 }
 
 function setupSearch() {
-    const searchId = document.getElementById('search-id');
-    const searchResolution = document.getElementById('search-resolution');
-    const searchInitials = document.getElementById('search-initials');
-    const searchCity = document.getElementById('search-city');
+    const inputs = ['id', 'resolution', 'initials', 'city'].map(key => ({
+        key,
+        el: document.getElementById(`search-${key}`)
+    }));
 
-    searchId.addEventListener('input', (event) => {
-        searchFilters.id = event.target.value.trim().toLowerCase();
-    });
-
-    searchResolution.addEventListener('input', (event) => {
-        searchFilters.resolution = event.target.value.trim().toLowerCase();
-    });
-
-    searchInitials.addEventListener('input', (event) => {
-        searchFilters.initials = event.target.value.trim().toLowerCase();
-    });
-
-    searchCity.addEventListener('input', (event) => {
-        searchFilters.city = event.target.value.trim().toLowerCase();
-    });
-
-    // Clear all searches on escape key
-    const clearAll = () => {
-        searchId.value = '';
-        searchResolution.value = '';
-        searchInitials.value = '';
-        searchCity.value = '';
-        searchFilters.id = '';
-        searchFilters.resolution = '';
-        searchFilters.initials = '';
-        searchFilters.city = '';
-    };
-
-    [searchId, searchResolution, searchInitials, searchCity].forEach(input => {
-        input.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                clearAll();
+    inputs.forEach(({ key, el }) => {
+        el.addEventListener('input', (e) => {
+            searchFilters[key] = e.target.value.trim().toLowerCase();
+        });
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                inputs.forEach(({ key: k, el: element }) => {
+                    element.value = '';
+                    searchFilters[k] = '';
+                });
             }
         });
     });
@@ -654,19 +549,9 @@ function setupInteractions() {
     function showModal(marble) {
         const data = marble.resolutionData;
         const color = marble.marbleColor;
-
-        // Format resolution - truncate to 50 characters if needed
-        let resolution = data.resolution.toLowerCase();
-        if (resolution.length > 50) {
-            resolution = resolution.substring(0, 50) + '...';
-        }
-
-        // Format initials - add dots between letters (e.g., "DL" -> "D.L.")
+        const resolution = truncateText(data.resolution);
         const formattedInitials = data.initials.split('').join('.') + '.';
-
-        // Use white text for dark marbles, dark text for light marbles
-        const isDark = isColorDark(color);
-        const textColor = isDark ? '#ffffff' : '#333333';
+        const textColor = isColorDark(color) ? '#ffffff' : '#333333';
 
         modalMarble.style.backgroundColor = color;
         modalMarble.style.color = textColor; // Set text color based on background
