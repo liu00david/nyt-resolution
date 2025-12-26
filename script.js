@@ -213,25 +213,12 @@ function setupPhysics() {
     const marbleRadius = jarWidth / 12;
     const wallThickness = 20;
 
-    // Calculate total volume based on size multipliers
-    const totalSizeMultiplier = resolutionData.reduce((sum, data) => {
-        return sum + Math.pow((data.size || 1.0), 2); // Area is proportional to radius squared
-    }, 0);
+    // Jar height based on number of marbles
+    // Simple linear formula: height = max(330, 9.2*N + 150)
+    const N = resolutionData.length;
+    const jarHeight = Math.max(330, 9.2 * N + 150);
 
-    // Base jar height calculation
-    // Adjust the multiplier here to change jar height (currently 0.011)
-    const heightMultiplier = 0.011;
-    const calculatedHeight = screenHeight * totalSizeMultiplier * heightMultiplier;
-    const minHeight = screenHeight * 0.5; // Minimum jar height is half page height
-    const baseJarHeight = Math.max(calculatedHeight, minHeight);
-
-    // Add 3 ball heights for headroom
-    const ballHeight = marbleRadius * 2;
-    const headroom = ballHeight * 3;
-    const jarHeight = baseJarHeight + headroom;
-
-    console.log(`Total size multiplier sum: ${totalSizeMultiplier.toFixed(2)}`);
-    console.log(`Calculated jar height: ${jarHeight.toFixed(2)}px (${(jarHeight / screenHeight).toFixed(2)}x screen height)`)
+    console.log(`Jar dimensions: ${jarWidth}px wide x ${jarHeight.toFixed(0)}px tall for ${resolutionData.length} marbles`)
 
     // Set canvas height to fit jar exactly
     const topMargin = 200;
