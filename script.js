@@ -63,12 +63,10 @@ const ResolutionSchema = {
 
     validateInitials(value, errors) {
         if (!value || typeof value !== 'string') {
-            errors.push('initials must be a string');
             return 'UN';
         }
         const trimmed = String(value).trim().toUpperCase();
         if (trimmed.length === 0 || trimmed.length > 5) {
-            errors.push('initials must be 1-5 characters');
             return trimmed.substring(0, 5) || 'UN';
         }
         return trimmed;
@@ -76,7 +74,6 @@ const ResolutionSchema = {
 
     validateCity(value, errors) {
         if (!value || typeof value !== 'string') {
-            errors.push('city must be a string');
             return 'Unknown';
         }
         const trimmed = String(value).trim();
@@ -92,7 +89,6 @@ const ResolutionSchema = {
         }
         const age = parseInt(value, 10);
         if (isNaN(age) || age < 1 || age > 120) {
-            errors.push('age must be between 1 and 120');
             return null;
         }
         return age;
@@ -106,7 +102,6 @@ const ResolutionSchema = {
         // Validate hex color format
         const hexRegex = /^#?[0-9A-Fa-f]{6}$/;
         if (!hexRegex.test(trimmed)) {
-            errors.push('color must be valid hex format');
             return '#FFB3BA';
         }
         return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
@@ -118,7 +113,6 @@ const ResolutionSchema = {
         }
         if (typeof value === 'number') {
             if (!isFinite(value) || value <= 0 || value > 2) {
-                errors.push('size must be between 0 and 2');
                 return 1.0;
             }
             return value;
@@ -131,7 +125,6 @@ const ResolutionSchema = {
 
             const parsed = parseFloat(value);
             if (!isFinite(parsed) || parsed <= 0 || parsed > 2) {
-                errors.push('size must be between 0 and 2');
                 return 1.0;
             }
             return parsed;
