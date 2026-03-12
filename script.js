@@ -577,7 +577,7 @@ async function fetchFreshData(isBackground = false) {
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
         const response = await fetch(
-            'https://script.google.com/macros/s/AKfycbzANbs-5NxxmJaeQIFv6DPzZ_G00MzObbuj0MhTh1GChN9Ri2gwDzB5StdZHsC_g_yiBQ/exec',
+            'https://script.google.com/macros/s/AKfycbzDjBzjq0HgrFgy52HA1lexrhygLX4DzHPoPqhw-PPIoeIRQz1r2SLYnbWmWPOMn3XMjg/exec',
             {
                 signal: controller.signal,
                 mode: 'cors',
